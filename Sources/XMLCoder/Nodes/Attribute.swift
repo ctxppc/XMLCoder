@@ -1,9 +1,9 @@
 // XMLCoder © 2019 Creatunit
 
-public struct XMLAttribute : TypedXMLNode {
+public struct Attribute : TypedNode {
 	
 	/// Creates an attribute node with given unprocessed attribute name, attribute value, and scope.
-	internal init(unprocessedName: String, value: String, scope: XMLScope) {
+	internal init(unprocessedName: String, value: String, scope: Scope) {
 		
 		let nameComponents = unprocessedName.split(separator: ":", maxSplits: 1, omittingEmptySubsequences: false)
 		if nameComponents.count == 2 {
@@ -23,12 +23,12 @@ public struct XMLAttribute : TypedXMLNode {
 	}
 	
 	// See protocol`.
-	public let type: XMLNodeType
+	public let type: NodeType
 	
 	/// The raw attribute value.
 	public let value: String
 	
 	// See protocol.
-	public static var codingKind: CodingXMLNodeKind { .attribute }
+	public static var codingKind: CodingNodeKind { .attribute }
 	
 }

@@ -4,16 +4,16 @@ import DepthKit
 import Foundation
 
 /// A decoder and decoding container that decodes a value from an element.
-public struct XMLElementDecoder : Decoder {
+public struct ElementDecoder : Decoder {
 	
 	/// Creates a decoder to decode a value from the root element of given XML data.
-	public init(from data: Data, configuration: XMLDecodingConfiguration = .init()) throws {
-		guard let element = try XMLTreeParser(data: data).rootElement else { throw XMLDecodingError.noRootElement }
+	public init(from data: Data, configuration: DecodingConfiguration = .init()) throws {
+		guard let element = try TreeParser(data: data).rootElement else { throw DecodingError.noRootElement }
 		self.init(element: element, configuration: configuration)
 	}
 	
 	/// Creates a decoder to decode a value from given element.
-	public init(element: XMLElement, configuration: XMLDecodingConfiguration = .init()) {
+	public init(element: Element, configuration: DecodingConfiguration = .init()) {
 		self.init(element: element, codingPath: [], configuration: configuration, userInfo: [:])
 	}
 	
@@ -22,7 +22,7 @@ public struct XMLElementDecoder : Decoder {
 	/// - Parameter decoder:			The element decoder to derive the element sequence decoder from.
 	/// - Parameter enteringCodingKey:	A coding key to get from the element decoder's element to the element sequence decoder's elements, or `nil` if there is no traversal between the two decoders.
 	/// - Parameter element:			The element to decode from.
-	init(derivedFrom decoder: XMLElementDecoder, enteringCodingKey: CodingKey, element: XMLElement) {
+	init(derivedFrom decoder: ElementDecoder, enteringCodingKey: CodingKey, element: Element) {
 		self.init(
 			element:		element,
 			codingPath:		decoder.codingPath.appending(enteringCodingKey),
@@ -32,7 +32,7 @@ public struct XMLElementDecoder : Decoder {
 	}
 	
 	/// Creates a decoder to decode a value from given element.
-	init(element: XMLElement, codingPath: CodingPath, configuration: XMLDecodingConfiguration, userInfo: [CodingUserInfoKey : Any]) {
+	init(element: Element, codingPath: CodingPath, configuration: DecodingConfiguration, userInfo: [CodingUserInfoKey : Any]) {
 		self.element		= element
 		self.codingPath		= codingPath
 		self.configuration	= configuration
@@ -40,13 +40,13 @@ public struct XMLElementDecoder : Decoder {
 	}
 	
 	/// The element being decoded.
-	public private(set) var element: XMLElement
+	public private(set) var element: Element
 	
 	// See protocol.
 	public private(set) var codingPath: CodingPath
 	
 	/// The decoder's configuration.
-	public var configuration: XMLDecodingConfiguration
+	public var configuration: DecodingConfiguration
 	
 	// See protocol.
 	public var userInfo: [CodingUserInfoKey : Any]
@@ -55,39 +55,39 @@ public struct XMLElementDecoder : Decoder {
 	///
 	/// For every key during decoding with a keyed decoding container, the decoder looks for a matching attribute or matching elements within `element`. An error is thrown when decoding a primitive value for which there is more than one matching node (of the coding key's node kind).
 	public func container<Key : CodingKey>(keyedBy type: Key.Type) -> KeyedDecodingContainer<Key> {
-		.init(KeyedXMLElementDecodingContainer(decoder: self))
+		.init(KeyedElementDecodingContainer(decoder: self))
 	}
 	
 	/// Returns an unkeyed decoder container for decoding values contained within `element`.
 	///
 	/// The decoder decodes values in an unkeyed decoding container by decoding every element contained within `element`. The attributes of `element` are ignored.
 	public func unkeyedContainer() -> UnkeyedDecodingContainer {
-		XMLElementSequenceDecoder(
+		ElementSequenceDecoder(
 			derivedFrom:		self,
 			enteringCodingKey:	nil,
-			elements:			element.children.compactMap { $0 as? XMLElement }
+			elements:			element.children.compactMap { $0 as? Element }
 		).unkeyedContainer()
 	}
 	
 	/// Returns a single-value container for decoding a value from `element`'s contents.
 	public func singleValueContainer() -> SingleValueDecodingContainer {
-		SingleValueXMLElementDecodingContainer(decoder: self)
+		SingleValueElementDecodingContainer(decoder: self)
 	}
 	
 }
 
 /// A keyed decoding container for decoding from an XML element.
-private struct KeyedXMLElementDecodingContainer<Key : CodingKey> : KeyedDecodingContainerProtocol {
+private struct KeyedElementDecodingContainer<Key : CodingKey> : KeyedDecodingContainerProtocol {
 	
 	/// Creates a keyed XML element decoding container using given decoder.
-	init(decoder: XMLElementDecoder) {
+	init(decoder: ElementDecoder) {
 		
 		self.decoder = decoder
 		
-		var nodesByKeyString: [String : [TypedXMLNode]] = [:]
+		var nodesByKeyString: [String : [TypedNode]] = [:]
 		var keys: [Key] = []
 		
-		let keyForNode: (TypedXMLNode) -> Key?
+		let keyForNode: (TypedNode) -> Key?
 		if let keyType = Key.self as? XMLCodingKey.Type {
 			keyForNode = { keyType.init(for: $0) as! Key? }	// forced downcasting to optional (instead of … as? Key) because we are asserting the subtyping condition is sound
 		} else {
@@ -95,7 +95,7 @@ private struct KeyedXMLElementDecodingContainer<Key : CodingKey> : KeyedDecoding
 		}
 		
 		for child in decoder.element.children {
-			guard let child = child as? TypedXMLNode, let key = keyForNode(child) else { continue }
+			guard let child = child as? TypedNode, let key = keyForNode(child) else { continue }
 			if let otherChildren = nodesByKeyString[key.stringValue] {
 				nodesByKeyString[key.stringValue] = otherChildren.appending(child)
 			} else {
@@ -110,10 +110,10 @@ private struct KeyedXMLElementDecodingContainer<Key : CodingKey> : KeyedDecoding
 	}
 	
 	/// The decoder.
-	private let decoder: XMLElementDecoder
+	private let decoder: ElementDecoder
 	
 	/// The element being decoded.
-	private var element: XMLElement {
+	private var element: Element {
 		decoder.element
 	}
 	
@@ -131,31 +131,31 @@ private struct KeyedXMLElementDecodingContainer<Key : CodingKey> : KeyedDecoding
 	}
 	
 	/// The nodes contained in `element`, keyed by coding key string value.
-	private let nodesByKeyString: [String : [TypedXMLNode]]
+	private let nodesByKeyString: [String : [TypedNode]]
 	
 	/// Returns the node matching given key.
-	private func node(forKey key: Key) throws -> XMLNode {
+	private func node(forKey key: Key) throws -> Node {
 		let path = codingPath.appending(key)
 		let matchingNodes = try nodes(forKey: key)
-		guard let node = matchingNodes.first else { throw XMLDecodingError.keyNotFound(path: path) }
-		guard matchingNodes.count <= 1 else { throw XMLDecodingError.multipleNodesForKey(path: path) }
+		guard let node = matchingNodes.first else { throw DecodingError.keyNotFound(path: path) }
+		guard matchingNodes.count <= 1 else { throw DecodingError.multipleNodesForKey(path: path) }
 		return node
 	}
 	
 	/// Returns the nodes matching given key.
-	private func nodes(forKey key: Key) throws -> [XMLNode] {
+	private func nodes(forKey key: Key) throws -> [Node] {
 		nodesByKeyString[key.stringValue] ?? []
 	}
 	
 	private func decode<Value : Decodable>(key: Key) throws -> Value {
 		let matchedNodes = try nodes(forKey: key)
-		guard let matchedNode = matchedNodes.first else { throw XMLDecodingError.keyNotFound(path: codingPath.appending(key)) }
+		guard let matchedNode = matchedNodes.first else { throw DecodingError.keyNotFound(path: codingPath.appending(key)) }
 		if matchedNodes.count > 1 {
-			return try Value(from: XMLElementSequenceDecoder(derivedFrom: decoder, enteringCodingKey: key, elements: matchedNodes.compactMap { $0 as? XMLElement }))
+			return try Value(from: ElementSequenceDecoder(derivedFrom: decoder, enteringCodingKey: key, elements: matchedNodes.compactMap { $0 as? Element }))
 		} else {
 			switch matchedNode {
-				case let element as XMLElement:		return try XMLElementDecoder(derivedFrom: decoder, enteringCodingKey: key, element: element).singleValueContainer().decode(Value.self)
-				case let attribute as XMLAttribute:	return try XMLAttributeDecoder(derivedFrom: decoder, key: key, attribute: attribute).singleValueContainer().decode(Value.self)
+				case let element as Element:		return try ElementDecoder(derivedFrom: decoder, enteringCodingKey: key, element: element).singleValueContainer().decode(Value.self)
+				case let attribute as Attribute:	return try AttributeDecoder(derivedFrom: decoder, key: key, attribute: attribute).singleValueContainer().decode(Value.self)
 				case let other:						fatalError("Cannot create single-value container over \(type(of: other))")
 			}
 		}
@@ -243,14 +243,14 @@ private struct KeyedXMLElementDecodingContainer<Key : CodingKey> : KeyedDecoding
 	
 	// See protocol.
 	func nestedContainer<NestedKey : CodingKey>(keyedBy type: NestedKey.Type, forKey key: Key) throws -> KeyedDecodingContainer<NestedKey> {
-		guard let innerElement = try node(forKey: key) as? XMLElement else { throw XMLDecodingError.keyedContainerOverAttributeNode(path: codingPath.appending(key)) }
-		return XMLElementDecoder(derivedFrom: decoder, enteringCodingKey: key, element: innerElement).container(keyedBy: NestedKey.self)
+		guard let innerElement = try node(forKey: key) as? Element else { throw DecodingError.keyedContainerOverAttributeNode(path: codingPath.appending(key)) }
+		return ElementDecoder(derivedFrom: decoder, enteringCodingKey: key, element: innerElement).container(keyedBy: NestedKey.self)
 	}
 	
 	// See protocol.
 	func nestedUnkeyedContainer(forKey key: Key) throws -> UnkeyedDecodingContainer {
-		guard let innerElement = try node(forKey: key) as? XMLElement else { throw XMLDecodingError.unkeyedContainerOverAttributeNode(path: codingPath.appending(key)) }
-		return XMLElementDecoder(derivedFrom: decoder, enteringCodingKey: key, element: innerElement).unkeyedContainer()
+		guard let innerElement = try node(forKey: key) as? Element else { throw DecodingError.unkeyedContainerOverAttributeNode(path: codingPath.appending(key)) }
+		return ElementDecoder(derivedFrom: decoder, enteringCodingKey: key, element: innerElement).unkeyedContainer()
 	}
 	
 	// See protocol.
@@ -260,8 +260,8 @@ private struct KeyedXMLElementDecodingContainer<Key : CodingKey> : KeyedDecoding
 	
 	// See protocol.
 	func superDecoder(forKey key: Key) throws -> Decoder {
-		guard let innerElement = try node(forKey: key) as? XMLElement else { throw XMLDecodingError.keyedContainerOverAttributeNode(path: codingPath.appending(key)) }
-		return XMLElementDecoder(derivedFrom: decoder, enteringCodingKey: key, element: innerElement)
+		guard let innerElement = try node(forKey: key) as? Element else { throw DecodingError.keyedContainerOverAttributeNode(path: codingPath.appending(key)) }
+		return ElementDecoder(derivedFrom: decoder, enteringCodingKey: key, element: innerElement)
 	}
 	
 }
@@ -271,26 +271,26 @@ private struct KeyedXMLElementDecodingContainer<Key : CodingKey> : KeyedDecoding
 /// When decoding a primitive value, the container converts the element's string value to a value of the requested type. An error is thrown if the decoder's element contains elements.
 ///
 /// When decoding a decodable value, the container delegates decoding to the decodable type's initialiser. The element decoder is passed so that the initialiser can decode its structure using keyed, unkeyed, or single-value decoding containers as appropriate.
-private struct SingleValueXMLElementDecodingContainer : SingleValueDecodingContainer {
+private struct SingleValueElementDecodingContainer : SingleValueDecodingContainer {
 	
 	/// The decoder.
-	let decoder: XMLElementDecoder
+	let decoder: ElementDecoder
 	
 	var codingPath: CodingPath {
 		decoder.codingPath
 	}
 	
 	private func stringValue() throws -> String {
-		guard !decoder.element.children.contains(where: { $0 is XMLElement }) else { throw XMLDecodingError.mixedElementContent(path: codingPath) }
-		return decoder.element.children.compactMap { ($0 as? XMLTextNode)?.stringValue }.joined()
+		guard !decoder.element.children.contains(where: { $0 is Element }) else { throw DecodingError.mixedElementContent(path: codingPath) }
+		return decoder.element.children.compactMap { ($0 as? TextNode)?.stringValue }.joined()
 	}
 	
-	private var configuration: XMLDecodingConfiguration {
+	private var configuration: DecodingConfiguration {
 		decoder.configuration
 	}
 	
-	private func decodeValue<Value>(using formatter: XMLDecodingConfiguration.Formatter<Value>) throws -> Value {
-		guard let value = formatter(try stringValue()) else { throw XMLDecodingError.typeMismatch(attemptedType: Value.self, path: codingPath) }
+	private func decodeValue<Value>(using formatter: DecodingConfiguration.Formatter<Value>) throws -> Value {
+		guard let value = formatter(try stringValue()) else { throw DecodingError.typeMismatch(attemptedType: Value.self, path: codingPath) }
 		return value
 	}
 	

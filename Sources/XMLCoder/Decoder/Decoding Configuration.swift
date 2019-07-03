@@ -5,8 +5,8 @@ import Foundation
 
 /// A value that decodes an XML tree.
 ///
-/// `XMLDecoder` currently does not support extracting strings from mixed elements, i.e., elements containing elements interspersed with textual content. An error is thrown when attempting to decode a string from a mixed element. Strings are ignored when decoding an aggregate value from a mixed element, i.e., only the elements can be used to decode the aggregate value.
-public struct XMLDecodingConfiguration {
+/// XMLCoder currently does not support extracting strings from mixed elements, i.e., elements containing elements interspersed with textual content. An error is thrown when attempting to decode a string from a mixed element. Strings are ignored when decoding an aggregate value from a mixed element, i.e., only the elements can be used to decode the aggregate value.
+public struct DecodingConfiguration {
 	
 	/// Creates a configuration.
 	public init() {}

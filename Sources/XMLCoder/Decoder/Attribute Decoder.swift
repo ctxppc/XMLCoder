@@ -3,10 +3,10 @@
 /// A decoder and decoding container that decodes a value from an attribute.
 ///
 /// An attribute decoder only supports single-value decoding.
-internal struct XMLAttributeDecoder : Decoder {
+internal struct AttributeDecoder : Decoder {
 	
 	/// Creates an attribute decoder derived from an element decoder.
-	init(derivedFrom elementDecoder: XMLElementDecoder, key: CodingKey, attribute: XMLAttribute) {
+	init(derivedFrom elementDecoder: ElementDecoder, key: CodingKey, attribute: Attribute) {
 		self.attribute		= attribute
 		self.codingPath		= elementDecoder.codingPath.appending(key)
 		self.configuration	= elementDecoder.configuration
@@ -14,37 +14,37 @@ internal struct XMLAttributeDecoder : Decoder {
 	}
 	
 	/// The element being decoded.
-	let attribute: XMLAttribute
+	let attribute: Attribute
 	
 	// See protocol.
 	let codingPath: CodingPath
 	
 	/// The decoder's configuration.
-	var configuration: XMLDecodingConfiguration
+	var configuration: DecodingConfiguration
 	
 	// See protocol.
 	let userInfo: [CodingUserInfoKey : Any]
 	
 	// See protocol.
 	func container<Key>(keyedBy type: Key.Type) throws -> KeyedDecodingContainer<Key> where Key : CodingKey {
-		throw XMLDecodingError.keyedContainerOverAttributeNode(path: codingPath)
+		throw DecodingError.keyedContainerOverAttributeNode(path: codingPath)
 	}
 	
 	// See protocol.
 	func unkeyedContainer() throws -> UnkeyedDecodingContainer {
-		throw XMLDecodingError.unkeyedContainerOverAttributeNode(path: codingPath)
+		throw DecodingError.unkeyedContainerOverAttributeNode(path: codingPath)
 	}
 	
 	// See protocol.
 	func singleValueContainer() -> SingleValueDecodingContainer {
-		SingleValueXMLAttributeDecodingContainer(decoder: self)
+		SingleValueAttributeDecodingContainer(decoder: self)
 	}
 	
 }
 
-private struct SingleValueXMLAttributeDecodingContainer : SingleValueDecodingContainer {
+private struct SingleValueAttributeDecodingContainer : SingleValueDecodingContainer {
 	
-	fileprivate let decoder: XMLAttributeDecoder
+	fileprivate let decoder: AttributeDecoder
 	
 	var codingPath: CodingPath {
 		decoder.codingPath
@@ -54,12 +54,12 @@ private struct SingleValueXMLAttributeDecodingContainer : SingleValueDecodingCon
 		decoder.attribute.value
 	}
 	
-	private var configuration: XMLDecodingConfiguration {
+	private var configuration: DecodingConfiguration {
 		decoder.configuration
 	}
 	
-	private func decodeValue<Value>(using formatter: XMLDecodingConfiguration.Formatter<Value>) throws -> Value {
-		guard let value = formatter(stringValue) else { throw XMLDecodingError.typeMismatch(attemptedType: Value.self, path: codingPath) }
+	private func decodeValue<Value>(using formatter: DecodingConfiguration.Formatter<Value>) throws -> Value {
+		guard let value = formatter(stringValue) else { throw DecodingError.typeMismatch(attemptedType: Value.self, path: codingPath) }
 		return value
 	}
 	

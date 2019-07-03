@@ -2,7 +2,7 @@
 
 import Foundation
 
-public struct XMLNamespace : Hashable {
+public struct Namespace : Hashable {
 	
 	/// Defines a namespace with given name.
 	public init(name: String) {

@@ -1,6 +1,6 @@
 // XMLCoder © 2019 Creatunit
 
-public enum CodingXMLNodeKind : String {
+public enum CodingNodeKind : String {
 	
 	/// Specifies that values are coded as elements.
 	case element

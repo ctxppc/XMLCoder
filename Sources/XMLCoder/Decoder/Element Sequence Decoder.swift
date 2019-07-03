@@ -5,7 +5,7 @@ import DepthKit
 /// A decoder and decoding container that decodes a value from a sequence of elements.
 ///
 /// An element sequence decoder is derived from an element decoder when more than one element matches a coding key during keyed decoding.
-internal struct XMLElementSequenceDecoder : Decoder {
+internal struct ElementSequenceDecoder : Decoder {
 	
 	/// Derives an element sequence decoder from given element decoder.
 	///
@@ -14,7 +14,7 @@ internal struct XMLElementSequenceDecoder : Decoder {
 	/// - Parameter elementDecoder: The element decoder to derive the element sequence decoder from.
 	/// - Parameter enteringCodingKey: A coding key to get from the element decoder's element to the element sequence decoder's elements, or `nil` if there is no traversal between the two decoders.
 	/// - Parameter elements: The elements to decode from.
-	init(derivedFrom elementDecoder: XMLElementDecoder, enteringCodingKey: CodingKey?, elements: [XMLElement]) {
+	init(derivedFrom elementDecoder: ElementDecoder, enteringCodingKey: CodingKey?, elements: [Element]) {
 		precondition(elements.count > 1, "Cannot create element sequence decoder over zero or one elements")
 		self.elements		= elements
 		self.codingPath		= enteringCodingKey.flatMap(elementDecoder.codingPath.appending) ?? elementDecoder.codingPath
@@ -25,20 +25,20 @@ internal struct XMLElementSequenceDecoder : Decoder {
 	/// The elements being decoded.
 	///
 	/// - Invariant: elements` contains more than one element.
-	fileprivate private(set) var elements: [XMLElement]
+	fileprivate private(set) var elements: [Element]
 	
 	// See protocol.
 	private(set) var codingPath: CodingPath
 	
 	/// The decoder's configuration.
-	var configuration: XMLDecodingConfiguration
+	var configuration: DecodingConfiguration
 	
 	// See protocol.
 	var userInfo: [CodingUserInfoKey : Any]
 	
 	// See protocol.
 	func container<Key : CodingKey>(keyedBy type: Key.Type) throws -> KeyedDecodingContainer<Key> {
-		throw XMLDecodingError.multipleNodesForKey(path: codingPath)
+		throw DecodingError.multipleNodesForKey(path: codingPath)
 	}
 	
 	// See protocol.
@@ -53,18 +53,18 @@ internal struct XMLElementSequenceDecoder : Decoder {
 	
 }
 
-private struct UnkeyedXMLElementSequenceDecodingContainer : UnkeyedDecodingContainer {
+private struct UnkeyedElementSequenceDecodingContainer : UnkeyedDecodingContainer {
 	
 	/// Creates an unkeyed decoding container using given decoder.
-	init(decoder: XMLElementSequenceDecoder) {
+	init(decoder: ElementSequenceDecoder) {
 		self.decoder = decoder
 	}
 	
 	/// The decoder.
-	let decoder: XMLElementSequenceDecoder
+	let decoder: ElementSequenceDecoder
 	
 	/// The elements to be decoded.
-	var elements: [XMLElement] {
+	var elements: [Element] {
 		return decoder.elements
 	}
 	
@@ -110,8 +110,8 @@ private struct UnkeyedXMLElementSequenceDecodingContainer : UnkeyedDecodingConta
 	/// Returns a decoder that decodes the next element.
 	///
 	/// This method does *not* advance the container's current index.
-	private func decoderForNextElement() -> XMLElementDecoder {
-		XMLElementDecoder(
+	private func decoderForNextElement() -> ElementDecoder {
+		ElementDecoder(
 			element: 		elements[currentIndex],
 			codingPath:		decoder.codingPath.appending(NumericKey(intValue: currentIndex)),
 			configuration:	decoder.configuration,

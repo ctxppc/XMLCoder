@@ -3,7 +3,7 @@
 import DepthKit
 import Foundation
 
-internal final class XMLTreeParser : NSObject, XMLParserDelegate {
+internal final class TreeParser : NSObject, XMLParserDelegate {
 	
 	/// Parses a tree from given data.
 	init(data: Data) throws {
@@ -17,13 +17,13 @@ internal final class XMLTreeParser : NSObject, XMLParserDelegate {
 	}
 	
 	/// The root element, if any.
-	var rootElement: XMLElement?
+	var rootElement: Element?
 	
 	/// The depth of the deepest element that hasn't been closed yet.
 	private var openDepth: Int = -1
 	
 	/// The active scope of the parser.
-	private var scope: XMLScope = .init()
+	private var scope: Scope = .init()
 	
 	/// An error during parsing, or `nil` if no error occurred.
 	var error: Error?
@@ -31,7 +31,7 @@ internal final class XMLTreeParser : NSObject, XMLParserDelegate {
 	// See protocol.
 	func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI namespaceName: String?, qualifiedName localName: String?, attributes: [String : String] = [:]) {
 		
-		let newElement = XMLElement(
+		let newElement = Element(
 			namespaceName:	namespaceName,
 			localName:		localName !! "Unexpected nil local name",
 			attributes:		attributes,

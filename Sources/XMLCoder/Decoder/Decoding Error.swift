@@ -1,7 +1,7 @@
 // XMLCoder © 2019 Creatunit
 
 /// An error during XML decoding.
-public enum XMLDecodingError : Error {
+public enum DecodingError : Error {
 	
 	/// An error indicating that the document has no root element.
 	case noRootElement
@@ -20,7 +20,7 @@ public enum XMLDecodingError : Error {
 	
 	/// An error indicating that a keyed decoding container is being created over an attribute node.
 	///
-	/// `XMLDecoder` does not support keyed or plural decoding from attribute values.
+	/// XMLCoder does not support keyed or plural decoding from attribute values.
 	case keyedContainerOverAttributeNode(path: CodingPath)
 	
 	/// An error indicating that an unkeyed decoding container is being created over an attribute node.

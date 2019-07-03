@@ -1,31 +1,31 @@
 // XMLCoder © 2019 Creatunit
 
-public struct XMLElement : TypedXMLNode, InternalXMLNode {
+public struct Element : TypedNode, InternalNode {
 	
 	/// Creates an element node with given namespace name, local name, and unprocessed attributes.
-	internal init(namespaceName: String?, localName: String, attributes: [String : String], scope: XMLScope) {
-		type = XMLNodeType(
+	internal init(namespaceName: String?, localName: String, attributes: [String : String], scope: Scope) {
+		type = NodeType(
 			namespace:	namespaceName.flatMap { .init(name: $0) },
 			localName:	localName
 		)
-		children = attributes.map { XMLAttribute(unprocessedName: $0.key, value: $0.value, scope: scope) }
+		children = attributes.map { Attribute(unprocessedName: $0.key, value: $0.value, scope: scope) }
 	}
 	
 	// See protocol.
-	public var type: XMLNodeType
+	public var type: NodeType
 	
 	/// The element's children nodes.
 	///
 	/// Every attribute node, if any, precedes every non-attribute node.
-	public var children: [XMLNode] = []
+	public var children: [Node] = []
 	
 	/// Returns a Boolean value indicating whether the element contains a mix of text nodes and elements.
 	public var hasMixedContent: Bool {
 		let hasText = children.lazy
-			.compactMap { $0 as? XMLTextNode }
+			.compactMap { $0 as? TextNode }
 			.map { $0.stringValue.trimmingCharacters(in: .whitespacesAndNewlines) }
 			.contains { !$0.isEmpty }
-		let hasElements = children.contains { $0 is XMLElement }
+		let hasElements = children.contains { $0 is Element }
 		return (hasText && !hasElements) || (!hasText && hasElements)
 	}
 	
@@ -33,9 +33,9 @@ public struct XMLElement : TypedXMLNode, InternalXMLNode {
 	///
 	/// - Parameter newNode: The node to insert.
 	/// - Parameter depth: The depth of the insertion point. A depth of 0 indicates that `newNode` should be inserted directly in `self.children`.
-	public mutating func append(_ newNode: XMLNode, depth: Int) {
+	public mutating func append(_ newNode: Node, depth: Int) {
 		if depth > 0 {
-			guard var openNode = children.removeLast() as? InternalXMLNode else { fatalError("Cannot append to a leaf node") }
+			guard var openNode = children.removeLast() as? InternalNode else { fatalError("Cannot append to a leaf node") }
 			openNode.append(newNode, depth: depth - 1)
 			children.append(openNode)
 		} else {
@@ -44,7 +44,7 @@ public struct XMLElement : TypedXMLNode, InternalXMLNode {
 	}
 	
 	// See protocol.
-	public static var codingKind: CodingXMLNodeKind { .element }
+	public static var codingKind: CodingNodeKind { .element }
 	
 }
 
@@ -78,9 +78,9 @@ fileprivate struct StandardisedCodingKey : XMLCodingKey {
 	let intValue: Int?
 	
 	// See protocol.
-	let namespace: XMLNamespace?
+	let namespace: Namespace?
 	
 	// See protocol.
-	let nodeKind: CodingXMLNodeKind
+	let nodeKind: CodingNodeKind
 	
 }

@@ -1,14 +1,14 @@
 // XMLCoder © 2019 Creatunit
 
 /// A text node.
-public struct XMLTextNode : XMLNode {
+public struct TextNode : Node {
 	
 	/// The node's string value.
 	public var stringValue: String
 	
 }
 
-extension XMLTextNode : ExpressibleByStringLiteral {
+extension TextNode : ExpressibleByStringLiteral {
 	public init(stringLiteral: String) {
 		self.stringValue = stringLiteral
 	}
