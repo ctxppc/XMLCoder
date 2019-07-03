@@ -2,9 +2,9 @@
 
 import DepthKit
 
-/// A decoder and decoding container that decodes a value from a sequence of elements.
+/// A decoder and decoding container that decodes a value from a sequence of (at least two) elements.
 ///
-/// An element sequence decoder is derived from an element decoder when more than one element matches a coding key during keyed decoding.
+/// An element sequence decoder is derived from an element decoder when more than one element matches a coding key during keyed decoding. An element sequence decoder enables unkeyed decoding when `unkeyedDecodingContainersUseContainerElements` is `false`. Keyed decoding is not available, nor is primitive value decoding.
 internal struct ElementSequenceDecoder : Decoder {
 	
 	/// Derives an element sequence decoder from given element decoder.
@@ -42,13 +42,14 @@ internal struct ElementSequenceDecoder : Decoder {
 	}
 	
 	// See protocol.
-	func unkeyedContainer() -> UnkeyedDecodingContainer {
-		TODO.unimplemented
+	func unkeyedContainer() throws -> UnkeyedDecodingContainer {
+		guard !configuration.unkeyedDecodingContainersUseContainerElements else { throw DecodingError.multipleNodesForKey(path: codingPath) }
+		return UnkeyedElementSequenceDecodingContainer(decoder: self)
 	}
 	
 	// See protocol.
 	func singleValueContainer() -> SingleValueDecodingContainer {
-		TODO.unimplemented
+		SingleValueElementSequenceDecodingContainer(decoder: self)
 	}
 	
 }
@@ -215,8 +216,8 @@ private struct UnkeyedElementSequenceDecodingContainer : UnkeyedDecodingContaine
 	}
 	
 	// See protocol.
-	mutating func nestedUnkeyedContainer() -> UnkeyedDecodingContainer {
-		let container = decoderForNextElement().unkeyedContainer()
+	mutating func nestedUnkeyedContainer() throws -> UnkeyedDecodingContainer {
+		let container = try decoderForNextElement().unkeyedContainer()
 		currentIndex += 1
 		return container
 	}
@@ -226,6 +227,80 @@ private struct UnkeyedElementSequenceDecodingContainer : UnkeyedDecodingContaine
 		let decoder = decoderForNextElement()
 		currentIndex += 1
 		return decoder
+	}
+	
+}
+
+private struct SingleValueElementSequenceDecodingContainer : SingleValueDecodingContainer {
+	
+	let decoder: ElementSequenceDecoder
+	
+	var codingPath: CodingPath {
+		decoder.codingPath
+	}
+	
+	func decodeNil() -> Bool {
+		return false
+	}
+	
+	func decode(_ type: Bool.Type) throws -> Bool {
+		throw DecodingError.multipleNodesForKey(path: codingPath)
+	}
+	
+	func decode(_ type: String.Type) throws -> String {
+		throw DecodingError.multipleNodesForKey(path: codingPath)
+	}
+	
+	func decode(_ type: Double.Type) throws -> Double {
+		throw DecodingError.multipleNodesForKey(path: codingPath)
+	}
+	
+	func decode(_ type: Float.Type) throws -> Float {
+		throw DecodingError.multipleNodesForKey(path: codingPath)
+	}
+	
+	func decode(_ type: Int.Type) throws -> Int {
+		throw DecodingError.multipleNodesForKey(path: codingPath)
+	}
+	
+	func decode(_ type: Int8.Type) throws -> Int8 {
+		throw DecodingError.multipleNodesForKey(path: codingPath)
+	}
+	
+	func decode(_ type: Int16.Type) throws -> Int16 {
+		throw DecodingError.multipleNodesForKey(path: codingPath)
+	}
+	
+	func decode(_ type: Int32.Type) throws -> Int32 {
+		throw DecodingError.multipleNodesForKey(path: codingPath)
+	}
+	
+	func decode(_ type: Int64.Type) throws -> Int64 {
+		throw DecodingError.multipleNodesForKey(path: codingPath)
+	}
+	
+	func decode(_ type: UInt.Type) throws -> UInt {
+		throw DecodingError.multipleNodesForKey(path: codingPath)
+	}
+	
+	func decode(_ type: UInt8.Type) throws -> UInt8 {
+		throw DecodingError.multipleNodesForKey(path: codingPath)
+	}
+	
+	func decode(_ type: UInt16.Type) throws -> UInt16 {
+		throw DecodingError.multipleNodesForKey(path: codingPath)
+	}
+	
+	func decode(_ type: UInt32.Type) throws -> UInt32 {
+		throw DecodingError.multipleNodesForKey(path: codingPath)
+	}
+	
+	func decode(_ type: UInt64.Type) throws -> UInt64 {
+		throw DecodingError.multipleNodesForKey(path: codingPath)
+	}
+	
+	func decode<T>(_ type: T.Type) throws -> T where T : Decodable {
+		try T(from: decoder)
 	}
 	
 }

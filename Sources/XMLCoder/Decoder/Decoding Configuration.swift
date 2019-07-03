@@ -53,7 +53,7 @@ public struct DecodingConfiguration {
 	
 	/// A Boolean value indicating whether unkeyed decoding containers use container elements.
 	///
-	/// As an illustration, the aggregate value `Person(name: "John", hobbies: ["Tennis", "Piano"]` of type
+	/// As an illustration, the aggregate value `Person(name: "John", hobbies: ["Tennis", "Piano"])` of type
 	///
 	///     struct Person : Codable {
 	///       let name: String

@@ -61,8 +61,8 @@ public struct ElementDecoder : Decoder {
 	/// Returns an unkeyed decoder container for decoding values contained within `element`.
 	///
 	/// The decoder decodes values in an unkeyed decoding container by decoding every element contained within `element`. The attributes of `element` are ignored.
-	public func unkeyedContainer() -> UnkeyedDecodingContainer {
-		ElementSequenceDecoder(
+	public func unkeyedContainer() throws -> UnkeyedDecodingContainer {
+		try ElementSequenceDecoder(
 			derivedFrom:		self,
 			enteringCodingKey:	nil,
 			elements:			element.children.compactMap { $0 as? Element }
@@ -241,27 +241,43 @@ private struct KeyedElementDecodingContainer<Key : CodingKey> : KeyedDecodingCon
 		try decode(key: key)
 	}
 	
+	/// Returns a decoder for decoding from the node matched with given key.
+	private func decoder(forKey key: Key) throws -> Decoder {
+		switch try node(forKey: key) {
+			case let element as Element:		return ElementDecoder(derivedFrom: decoder, enteringCodingKey: key, element: element)
+			case let attribute as Attribute:	return AttributeDecoder(derivedFrom: decoder, key: key, attribute: attribute)
+			case let other:						fatalError("Cannot create decoder over \(type(of: other))")
+		}
+	}
+	
 	// See protocol.
 	func nestedContainer<NestedKey : CodingKey>(keyedBy type: NestedKey.Type, forKey key: Key) throws -> KeyedDecodingContainer<NestedKey> {
-		guard let innerElement = try node(forKey: key) as? Element else { throw DecodingError.keyedContainerOverAttributeNode(path: codingPath.appending(key)) }
-		return ElementDecoder(derivedFrom: decoder, enteringCodingKey: key, element: innerElement).container(keyedBy: NestedKey.self)
+		try decoder(forKey: key).container(keyedBy: NestedKey.self)
 	}
 	
 	// See protocol.
 	func nestedUnkeyedContainer(forKey key: Key) throws -> UnkeyedDecodingContainer {
-		guard let innerElement = try node(forKey: key) as? Element else { throw DecodingError.unkeyedContainerOverAttributeNode(path: codingPath.appending(key)) }
-		return ElementDecoder(derivedFrom: decoder, enteringCodingKey: key, element: innerElement).unkeyedContainer()
+		let matchedNodes = try nodes(forKey: key)
+		guard let matchedNode = matchedNodes.first else { throw DecodingError.keyNotFound(path: codingPath.appending(key)) }
+		if matchedNodes.count > 1 {
+			return try ElementSequenceDecoder(derivedFrom: decoder, enteringCodingKey: key, elements: matchedNodes.compactMap { $0 as? Element }).unkeyedContainer()
+		} else {
+			switch matchedNode {
+				case let element as Element:		return try ElementDecoder(derivedFrom: decoder, enteringCodingKey: key, element: element).unkeyedContainer()
+				case let attribute as Attribute:	return try AttributeDecoder(derivedFrom: decoder, key: key, attribute: attribute).unkeyedContainer()	// this will throw the appropriate error
+				case let other:						fatalError("Cannot create unkeyed container over \(type(of: other))")
+			}
+		}
 	}
 	
 	// See protocol.
-	func superDecoder() throws -> Decoder {
+	func superDecoder() -> Decoder {
 		decoder		// currently no special support for subclassing
 	}
 	
 	// See protocol.
 	func superDecoder(forKey key: Key) throws -> Decoder {
-		guard let innerElement = try node(forKey: key) as? Element else { throw DecodingError.keyedContainerOverAttributeNode(path: codingPath.appending(key)) }
-		return ElementDecoder(derivedFrom: decoder, enteringCodingKey: key, element: innerElement)
+		try decoder(forKey: key)
 	}
 	
 }

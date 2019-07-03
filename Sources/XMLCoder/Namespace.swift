@@ -1,7 +1,5 @@
 // XMLCoder © 2019 Creatunit
 
-import Foundation
-
 public struct Namespace : Hashable {
 	
 	/// Defines a namespace with given name.

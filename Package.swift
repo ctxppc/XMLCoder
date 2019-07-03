@@ -12,7 +12,7 @@ let package = Package(
     dependencies: [
 		.package(url: "https://github.com/ctxppc/DepthKit.git", from: "0.7.0")],
     targets: [
-        .target(name: "XMLCoder", dependencies: []),
+        .target(name: "XMLCoder", dependencies: ["DepthKit"]),
         .testTarget(name: "XMLCoderTests", dependencies: ["XMLCoder"])
     ]
 )
