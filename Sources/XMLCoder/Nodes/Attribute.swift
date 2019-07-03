@@ -3,7 +3,7 @@
 public struct Attribute : TypedNode {
 	
 	/// Creates an attribute node with given unprocessed attribute name, attribute value, and scope.
-	internal init(unprocessedName: String, value: String, scope: Scope) {
+	init(unprocessedName: String, value: String, scope: Scope) {
 		
 		let nameComponents = unprocessedName.split(separator: ":", maxSplits: 1, omittingEmptySubsequences: false)
 		if nameComponents.count == 2 {

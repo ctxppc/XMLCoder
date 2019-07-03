@@ -5,7 +5,7 @@ import DepthKit
 /// A decoder and decoding container that decodes a value from a sequence of (at least two) elements.
 ///
 /// An element sequence decoder is derived from an element decoder when more than one element matches a coding key during keyed decoding. An element sequence decoder enables unkeyed decoding when `unkeyedDecodingContainersUseContainerElements` is `false`. Keyed decoding is not available, nor is primitive value decoding.
-internal struct ElementSequenceDecoder : Decoder {
+struct ElementSequenceDecoder : Decoder {
 	
 	/// Derives an element sequence decoder from given element decoder.
 	///

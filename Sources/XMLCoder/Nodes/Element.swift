@@ -3,7 +3,7 @@
 public struct Element : TypedNode, InternalNode {
 	
 	/// Creates an element node with given namespace name, local name, and unprocessed attributes.
-	internal init(namespaceName: String?, localName: String, attributes: [String : String], scope: Scope) {
+	init(namespaceName: String?, localName: String, attributes: [String : String], scope: Scope) {
 		type = NodeType(
 			namespace:	namespaceName.flatMap { .init(name: $0) },
 			localName:	localName

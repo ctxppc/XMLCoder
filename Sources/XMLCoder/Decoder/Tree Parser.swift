@@ -3,13 +3,15 @@
 import DepthKit
 import Foundation
 
-internal final class TreeParser : NSObject, XMLParserDelegate {
+final class TreeParser : NSObject, XMLParserDelegate {
 	
 	/// Parses a tree from given data.
 	init(data: Data) throws {
 		super.init()
 		let parser = XMLParser(data: data)
 		parser.delegate = self
+		parser.shouldProcessNamespaces = true
+		parser.shouldReportNamespacePrefixes = true
 		parser.parse()
 		if let error = self.error {
 			throw error

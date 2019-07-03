@@ -51,6 +51,13 @@ public struct ElementDecoder : Decoder {
 	// See protocol.
 	public var userInfo: [CodingUserInfoKey : Any]
 	
+	/// Decodes the root value.
+	///
+	/// - Returns: `singleValueContainer().decode(Value.self)`
+	public func decodeRootValue<Value : Decodable>() throws -> Value {
+		try singleValueContainer().decode(Value.self)
+	}
+	
 	/// Returns a keyed decoding container for decoding a value from `element`.
 	///
 	/// For every key during decoding with a keyed decoding container, the decoder looks for a matching attribute or matching elements within `element`. An error is thrown when decoding a primitive value for which there is more than one matching node (of the coding key's node kind).

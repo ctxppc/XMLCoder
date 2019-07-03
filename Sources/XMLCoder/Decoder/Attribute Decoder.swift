@@ -3,7 +3,7 @@
 /// A decoder and decoding container that decodes a value from an attribute.
 ///
 /// An attribute decoder only supports single-value decoding.
-internal struct AttributeDecoder : Decoder {
+struct AttributeDecoder : Decoder {
 	
 	/// Creates an attribute decoder derived from an element decoder.
 	init(derivedFrom elementDecoder: ElementDecoder, key: CodingKey, attribute: Attribute) {

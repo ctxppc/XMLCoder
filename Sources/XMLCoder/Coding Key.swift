@@ -17,7 +17,7 @@ public protocol XMLCodingKey : CodingKey {	// keep XML prefix to disambiguate fr
 
 extension XMLCodingKey {
 	
-	internal init?(for node: TypedNode) {
+	init?(for node: TypedNode) {
 		
 		self.init(stringValue: node.type.localName)
 		
@@ -35,7 +35,7 @@ extension XMLCodingKey {
 
 extension CodingKey {
 	
-	internal init?(for node: TypedNode) {
+	init?(for node: TypedNode) {
 		guard node.type.namespace == nil, type(of: node).codingKind == .element else { return nil }
 		self.init(stringValue: node.type.localName)
 	}
