@@ -1,6 +1,5 @@
 // XMLCoder © 2019 Creatunit
 
-import DepthKit
 import Foundation
 
 /// A value that decodes an XML tree.

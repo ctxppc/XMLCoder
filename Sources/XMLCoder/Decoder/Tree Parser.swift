@@ -1,6 +1,5 @@
 // XMLCoder © 2019 Creatunit
 
-import DepthKit
 import Foundation
 
 final class TreeParser : NSObject, XMLParserDelegate {
@@ -31,11 +30,11 @@ final class TreeParser : NSObject, XMLParserDelegate {
 	var error: Error?
 	
 	// See protocol.
-	func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI namespaceName: String?, qualifiedName localName: String?, attributes: [String : String] = [:]) {
+	func parser(_ parser: XMLParser, didStartElement localName: String, namespaceURI namespaceName: String?, qualifiedName: String?, attributes: [String : String] = [:]) {
 		
 		let newElement = Element(
 			namespaceName:	namespaceName,
-			localName:		localName !! "Unexpected nil local name",
+			localName:		localName,
 			attributes:		attributes,
 			scope:			scope
 		)
@@ -53,9 +52,9 @@ final class TreeParser : NSObject, XMLParserDelegate {
 	// See protocol.
 	func parser(_ parser: XMLParser, didStartMappingPrefix prefix: String, toURI namespaceName: String) {
 		if prefix.isEmpty {
-			scope.beginScope(.init(name: namespaceName), prefix: prefix)
-		} else {
 			scope.beginDefaultNamespaceScope(.init(name: namespaceName))
+		} else {
+			scope.beginScope(.init(name: namespaceName), prefix: prefix)
 		}
 		
 	}
@@ -63,9 +62,9 @@ final class TreeParser : NSObject, XMLParserDelegate {
 	// See protocol.
 	func parser(_ parser: XMLParser, didEndMappingPrefix prefix: String) {
 		if prefix.isEmpty {
-			scope.endScope(prefix: prefix)
-		} else {
 			scope.endDefaultNamespaceScope()
+		} else {
+			scope.endScope(prefix: prefix)
 		}
 	}
 	

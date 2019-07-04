@@ -1,6 +1,5 @@
 // XMLCoder © 2019 Creatunit
 
-import DepthKit
 import Foundation
 
 /// A decoder and decoding container that decodes a value from an element.
@@ -40,10 +39,10 @@ public struct ElementDecoder : Decoder {
 	}
 	
 	/// The element being decoded.
-	public private(set) var element: Element
+	public let element: Element
 	
 	// See protocol.
-	public private(set) var codingPath: CodingPath
+	public let codingPath: CodingPath
 	
 	/// The decoder's configuration.
 	public var configuration: DecodingConfiguration
@@ -134,43 +133,36 @@ private struct KeyedElementDecodingContainer<Key : CodingKey> : KeyedDecodingCon
 	
 	// See protocol.
 	func contains(_ key: Key) -> Bool {
-		nodesByKeyString.keys.contains(key.stringValue)
+		nodesByKeyString[key.stringValue].flatMap { !$0.isEmpty } ?? false
 	}
 	
 	/// The nodes contained in `element`, keyed by coding key string value.
 	private let nodesByKeyString: [String : [TypedNode]]
 	
-	/// Returns the node matching given key.
-	private func node(forKey key: Key) throws -> Node {
-		let path = codingPath.appending(key)
-		let matchingNodes = try nodes(forKey: key)
-		guard let node = matchingNodes.first else { throw DecodingError.keyNotFound(path: path) }
-		guard matchingNodes.count <= 1 else { throw DecodingError.multipleNodesForKey(path: path) }
-		return node
-	}
-	
-	/// Returns the nodes matching given key.
-	private func nodes(forKey key: Key) throws -> [Node] {
-		nodesByKeyString[key.stringValue] ?? []
-	}
-	
-	private func decode<Value : Decodable>(key: Key) throws -> Value {
-		let matchedNodes = try nodes(forKey: key)
+	/// Returns a decoder for decoding a value resp. values from the node resp. nodes matching given key.
+	private func decoder(forKey key: Key) throws -> Decoder {
+		let matchedNodes = nodesByKeyString[key.stringValue] ?? []
 		guard let matchedNode = matchedNodes.first else { throw DecodingError.keyNotFound(path: codingPath.appending(key)) }
 		if matchedNodes.count > 1 {
-			return try Value(from: ElementSequenceDecoder(derivedFrom: decoder, enteringCodingKey: key, elements: matchedNodes.compactMap { $0 as? Element }))
+			guard !decoder.configuration.unkeyedDecodingContainersUseContainerElements else { throw DecodingError.multipleNodesForKey(path: codingPath.appending(key)) }
+			return ElementSequenceDecoder(derivedFrom: decoder, enteringCodingKey: key, elements: matchedNodes.compactMap { $0 as? Element })
 		} else {
 			switch matchedNode {
-				case let element as Element:		return try ElementDecoder(derivedFrom: decoder, enteringCodingKey: key, element: element).singleValueContainer().decode(Value.self)
-				case let attribute as Attribute:	return try AttributeDecoder(derivedFrom: decoder, key: key, attribute: attribute).singleValueContainer().decode(Value.self)
-				case let other:						fatalError("Cannot create single-value container over \(type(of: other))")
+				case let element as Element:		return ElementDecoder(derivedFrom: decoder, enteringCodingKey: key, element: element)
+				case let attribute as Attribute:	return AttributeDecoder(derivedFrom: decoder, key: key, attribute: attribute)
+				case let other:						fatalError("Cannot create decoder over \(type(of: other))")	// escape hatch for unknown node types
 			}
 		}
 	}
 	
+	/// Decodes the value with given key.
+	private func decode<Value : Decodable>(key: Key) throws -> Value {
+		return try decoder(forKey: key).singleValueContainer().decode(Value.self)
+	}
+	
 	// See protocol.
 	func decodeNil(forKey key: Key) throws -> Bool {
-		decoder.configuration.nilFormatter(try decode(key: key)) ?? false
+		try decoder(forKey: key).singleValueContainer().decodeNil()
 	}
 	
 	// See protocol.
@@ -248,15 +240,6 @@ private struct KeyedElementDecodingContainer<Key : CodingKey> : KeyedDecodingCon
 		try decode(key: key)
 	}
 	
-	/// Returns a decoder for decoding from the node matched with given key.
-	private func decoder(forKey key: Key) throws -> Decoder {
-		switch try node(forKey: key) {
-			case let element as Element:		return ElementDecoder(derivedFrom: decoder, enteringCodingKey: key, element: element)
-			case let attribute as Attribute:	return AttributeDecoder(derivedFrom: decoder, key: key, attribute: attribute)
-			case let other:						fatalError("Cannot create decoder over \(type(of: other))")
-		}
-	}
-	
 	// See protocol.
 	func nestedContainer<NestedKey : CodingKey>(keyedBy type: NestedKey.Type, forKey key: Key) throws -> KeyedDecodingContainer<NestedKey> {
 		try decoder(forKey: key).container(keyedBy: NestedKey.self)
@@ -264,17 +247,7 @@ private struct KeyedElementDecodingContainer<Key : CodingKey> : KeyedDecodingCon
 	
 	// See protocol.
 	func nestedUnkeyedContainer(forKey key: Key) throws -> UnkeyedDecodingContainer {
-		let matchedNodes = try nodes(forKey: key)
-		guard let matchedNode = matchedNodes.first else { throw DecodingError.keyNotFound(path: codingPath.appending(key)) }
-		if matchedNodes.count > 1 {
-			return try ElementSequenceDecoder(derivedFrom: decoder, enteringCodingKey: key, elements: matchedNodes.compactMap { $0 as? Element }).unkeyedContainer()
-		} else {
-			switch matchedNode {
-				case let element as Element:		return try ElementDecoder(derivedFrom: decoder, enteringCodingKey: key, element: element).unkeyedContainer()
-				case let attribute as Attribute:	return try AttributeDecoder(derivedFrom: decoder, key: key, attribute: attribute).unkeyedContainer()	// this will throw the appropriate error
-				case let other:						fatalError("Cannot create unkeyed container over \(type(of: other))")
-			}
-		}
+		try decoder(forKey: key).unkeyedContainer()
 	}
 	
 	// See protocol.
@@ -312,7 +285,7 @@ private struct SingleValueElementDecodingContainer : SingleValueDecodingContaine
 		decoder.configuration
 	}
 	
-	private func decodeValue<Value>(using formatter: DecodingConfiguration.Formatter<Value>) throws -> Value {
+	private func decode<Value>(using formatter: DecodingConfiguration.Formatter<Value>) throws -> Value {
 		guard let value = formatter(try stringValue()) else { throw DecodingError.typeMismatch(attemptedType: Value.self, path: codingPath) }
 		return value
 	}
@@ -326,7 +299,7 @@ private struct SingleValueElementDecodingContainer : SingleValueDecodingContaine
 	}
 	
 	func decode(_ type: Bool.Type) throws -> Bool {
-		try decodeValue(using: configuration.boolFormatter)
+		try decode(using: configuration.boolFormatter)
 	}
 	
 	func decode(_ type: String.Type) throws -> String {
@@ -334,51 +307,51 @@ private struct SingleValueElementDecodingContainer : SingleValueDecodingContaine
 	}
 	
 	func decode(_ type: Double.Type) throws -> Double {
-		try decodeValue(using: configuration.numberFormatter).doubleValue
+		try decode(using: configuration.numberFormatter).doubleValue
 	}
 	
 	func decode(_ type: Float.Type) throws -> Float {
-		try decodeValue(using: configuration.numberFormatter).floatValue
+		try decode(using: configuration.numberFormatter).floatValue
 	}
 	
 	func decode(_ type: Int.Type) throws -> Int {
-		try decodeValue(using: configuration.numberFormatter).intValue
+		try decode(using: configuration.numberFormatter).intValue
 	}
 	
 	func decode(_ type: Int8.Type) throws -> Int8 {
-		try decodeValue(using: configuration.numberFormatter).int8Value
+		try decode(using: configuration.numberFormatter).int8Value
 	}
 	
 	func decode(_ type: Int16.Type) throws -> Int16 {
-		try decodeValue(using: configuration.numberFormatter).int16Value
+		try decode(using: configuration.numberFormatter).int16Value
 	}
 	
 	func decode(_ type: Int32.Type) throws -> Int32 {
-		try decodeValue(using: configuration.numberFormatter).int32Value
+		try decode(using: configuration.numberFormatter).int32Value
 	}
 	
 	func decode(_ type: Int64.Type) throws -> Int64 {
-		try decodeValue(using: configuration.numberFormatter).int64Value
+		try decode(using: configuration.numberFormatter).int64Value
 	}
 	
 	func decode(_ type: UInt.Type) throws -> UInt {
-		try decodeValue(using: configuration.numberFormatter).uintValue
+		try decode(using: configuration.numberFormatter).uintValue
 	}
 	
 	func decode(_ type: UInt8.Type) throws -> UInt8 {
-		try decodeValue(using: configuration.numberFormatter).uint8Value
+		try decode(using: configuration.numberFormatter).uint8Value
 	}
 	
 	func decode(_ type: UInt16.Type) throws -> UInt16 {
-		try decodeValue(using: configuration.numberFormatter).uint16Value
+		try decode(using: configuration.numberFormatter).uint16Value
 	}
 	
 	func decode(_ type: UInt32.Type) throws -> UInt32 {
-		try decodeValue(using: configuration.numberFormatter).uint32Value
+		try decode(using: configuration.numberFormatter).uint32Value
 	}
 	
 	func decode(_ type: UInt64.Type) throws -> UInt64 {
-		try decodeValue(using: configuration.numberFormatter).uint64Value
+		try decode(using: configuration.numberFormatter).uint64Value
 	}
 	
 	func decode<T>(_ type: T.Type) throws -> T where T : Decodable {

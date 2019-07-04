@@ -58,7 +58,7 @@ private struct SingleValueAttributeDecodingContainer : SingleValueDecodingContai
 		decoder.configuration
 	}
 	
-	private func decodeValue<Value>(using formatter: DecodingConfiguration.Formatter<Value>) throws -> Value {
+	private func decode<Value>(using formatter: DecodingConfiguration.Formatter<Value>) throws -> Value {
 		guard let value = formatter(stringValue) else { throw DecodingError.typeMismatch(attemptedType: Value.self, path: codingPath) }
 		return value
 	}
@@ -68,7 +68,7 @@ private struct SingleValueAttributeDecodingContainer : SingleValueDecodingContai
 	}
 	
 	func decode(_ type: Bool.Type) throws -> Bool {
-		try decodeValue(using: configuration.boolFormatter)
+		try decode(using: configuration.boolFormatter)
 	}
 	
 	func decode(_ type: String.Type) -> String {
@@ -76,51 +76,51 @@ private struct SingleValueAttributeDecodingContainer : SingleValueDecodingContai
 	}
 	
 	func decode(_ type: Double.Type) throws -> Double {
-		try decodeValue(using: configuration.numberFormatter).doubleValue
+		try decode(using: configuration.numberFormatter).doubleValue
 	}
 	
 	func decode(_ type: Float.Type) throws -> Float {
-		try decodeValue(using: configuration.numberFormatter).floatValue
+		try decode(using: configuration.numberFormatter).floatValue
 	}
 	
 	func decode(_ type: Int.Type) throws -> Int {
-		try decodeValue(using: configuration.numberFormatter).intValue
+		try decode(using: configuration.numberFormatter).intValue
 	}
 	
 	func decode(_ type: Int8.Type) throws -> Int8 {
-		try decodeValue(using: configuration.numberFormatter).int8Value
+		try decode(using: configuration.numberFormatter).int8Value
 	}
 	
 	func decode(_ type: Int16.Type) throws -> Int16 {
-		try decodeValue(using: configuration.numberFormatter).int16Value
+		try decode(using: configuration.numberFormatter).int16Value
 	}
 	
 	func decode(_ type: Int32.Type) throws -> Int32 {
-		try decodeValue(using: configuration.numberFormatter).int32Value
+		try decode(using: configuration.numberFormatter).int32Value
 	}
 	
 	func decode(_ type: Int64.Type) throws -> Int64 {
-		try decodeValue(using: configuration.numberFormatter).int64Value
+		try decode(using: configuration.numberFormatter).int64Value
 	}
 	
 	func decode(_ type: UInt.Type) throws -> UInt {
-		try decodeValue(using: configuration.numberFormatter).uintValue
+		try decode(using: configuration.numberFormatter).uintValue
 	}
 	
 	func decode(_ type: UInt8.Type) throws -> UInt8 {
-		try decodeValue(using: configuration.numberFormatter).uint8Value
+		try decode(using: configuration.numberFormatter).uint8Value
 	}
 	
 	func decode(_ type: UInt16.Type) throws -> UInt16 {
-		try decodeValue(using: configuration.numberFormatter).uint16Value
+		try decode(using: configuration.numberFormatter).uint16Value
 	}
 	
 	func decode(_ type: UInt32.Type) throws -> UInt32 {
-		try decodeValue(using: configuration.numberFormatter).uint32Value
+		try decode(using: configuration.numberFormatter).uint32Value
 	}
 	
 	func decode(_ type: UInt64.Type) throws -> UInt64 {
-		try decodeValue(using: configuration.numberFormatter).uint64Value
+		try decode(using: configuration.numberFormatter).uint64Value
 	}
 	
 	func decode<T>(_ type: T.Type) throws -> T where T : Decodable {

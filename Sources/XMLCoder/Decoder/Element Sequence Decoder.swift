@@ -2,20 +2,23 @@
 
 import DepthKit
 
-/// A decoder and decoding container that decodes a value from a sequence of (at least two) elements.
+/// A decoder and decoding container that decodes a value from a sequence of zero or more elements.
 ///
-/// An element sequence decoder is derived from an element decoder when more than one element matches a coding key during keyed decoding. An element sequence decoder enables unkeyed decoding when `unkeyedDecodingContainersUseContainerElements` is `false`. Keyed decoding is not available, nor is primitive value decoding.
+/// An element sequence decoder is derived from an element decoder
+/// - when more than one element matches a coding key during keyed decoding and `configuration.unkeyedDecodingContainersUseContainerElements` is `false`, or
+/// - when requesting an unkeyed decoder or nested unkeyed decoder (during keyed or single-value decoding).
+///
+/// In the first case, `elements` contains at least two elements. In the second case, `elements` contains zero or more elements. In either case, keyed decoding and single primitive value decoding on an element sequence decoder are not valid operations and a `DecodingError.multipleNodesForKey(path:)` error is thrown if either is attempted.
+///
+/// If `configuration.unkeyedDecodingContainersUseContainerElements` is `true` and more than one element matches a coding key during keyed decoding on an element decoder, a `DecodingError.multipleNodesForKey(path:)` error is thrown instead of an element sequence decoder being created.
 struct ElementSequenceDecoder : Decoder {
 	
 	/// Derives an element sequence decoder from given element decoder.
-	///
-	/// - Requires: `elements` contains more than one element.
 	///
 	/// - Parameter elementDecoder: The element decoder to derive the element sequence decoder from.
 	/// - Parameter enteringCodingKey: A coding key to get from the element decoder's element to the element sequence decoder's elements, or `nil` if there is no traversal between the two decoders.
 	/// - Parameter elements: The elements to decode from.
 	init(derivedFrom elementDecoder: ElementDecoder, enteringCodingKey: CodingKey?, elements: [Element]) {
-		precondition(elements.count > 1, "Cannot create element sequence decoder over zero or one elements")
 		self.elements		= elements
 		self.codingPath		= enteringCodingKey.flatMap(elementDecoder.codingPath.appending) ?? elementDecoder.codingPath
 		self.configuration	= elementDecoder.configuration
@@ -25,10 +28,10 @@ struct ElementSequenceDecoder : Decoder {
 	/// The elements being decoded.
 	///
 	/// - Invariant: elements` contains more than one element.
-	fileprivate private(set) var elements: [Element]
+	let elements: [Element]
 	
 	// See protocol.
-	private(set) var codingPath: CodingPath
+	let codingPath: CodingPath
 	
 	/// The decoder's configuration.
 	var configuration: DecodingConfiguration
@@ -43,8 +46,7 @@ struct ElementSequenceDecoder : Decoder {
 	
 	// See protocol.
 	func unkeyedContainer() throws -> UnkeyedDecodingContainer {
-		guard !configuration.unkeyedDecodingContainersUseContainerElements else { throw DecodingError.multipleNodesForKey(path: codingPath) }
-		return UnkeyedElementSequenceDecodingContainer(decoder: self)
+		UnkeyedElementSequenceDecodingContainer(decoder: self)
 	}
 	
 	// See protocol.
