@@ -1,5 +1,6 @@
 // XMLCoder © 2019 Creatunit
 
+import DepthKit
 import Foundation
 
 /// A decoder and decoding container that decodes a value from an element.
@@ -140,18 +141,28 @@ private struct KeyedElementDecodingContainer<Key : CodingKey> : KeyedDecodingCon
 	private let nodesByKeyString: [String : [TypedNode]]
 	
 	/// Returns a decoder for decoding a value resp. values from the node resp. nodes matching given key.
+	///
+	/// If no matching nodes are found,
+	/// - an element sequence decoder with zero elements is returned if `configuration.unkeyedDecodingContainersUseContainerElements` is `false`, or
+	/// - an error is thrown otherwise.
 	private func decoder(forKey key: Key) throws -> Decoder {
+		let codingPath = self.codingPath.appending(key)
 		let matchedNodes = nodesByKeyString[key.stringValue] ?? []
-		guard let matchedNode = matchedNodes.first else { throw DecodingError.keyNotFound(path: codingPath.appending(key)) }
-		if matchedNodes.count > 1 {
-			guard !decoder.configuration.unkeyedDecodingContainersUseContainerElements else { throw DecodingError.multipleNodesForKey(path: codingPath.appending(key)) }
-			return ElementSequenceDecoder(derivedFrom: decoder, enteringCodingKey: key, elements: matchedNodes.compactMap { $0 as? Element })
-		} else {
-			switch matchedNode {
-				case let element as Element:		return ElementDecoder(derivedFrom: decoder, enteringCodingKey: key, element: element)
-				case let attribute as Attribute:	return AttributeDecoder(derivedFrom: decoder, key: key, attribute: attribute)
-				case let other:						fatalError("Cannot create decoder over \(type(of: other))")	// escape hatch for unknown node types
+		if let matchedNode = matchedNodes.first {											// at least one node found, great!
+			if matchedNodes.count > 1 {														// at least two nodes found: return an element sequence decoder if acceptable
+				guard !decoder.configuration.unkeyedDecodingContainersUseContainerElements else { throw DecodingError.multipleNodesForKey(path: codingPath.appending(key)) }
+				return ElementSequenceDecoder(derivedFrom: decoder, enteringCodingKey: key, elements: matchedNodes.compactMap { $0 as? Element })
+			} else {																		// exactly one node found: return appropriate decoder for node
+				switch matchedNode {
+					case let element as Element:		return ElementDecoder(derivedFrom: decoder, enteringCodingKey: key, element: element)
+					case let attribute as Attribute:	return AttributeDecoder(derivedFrom: decoder, key: key, attribute: attribute)
+					case let other:						fatalError("Cannot create decoder over \(type(of: other))")	// escape hatch for unknown node types
+				}
 			}
+		} else if !decoder.configuration.unkeyedDecodingContainersUseContainerElements {	// zero nodes found but that might mean an empty unkeyed container (the returned decoder will itself throw an error if necessary)
+			return ElementSequenceDecoder(derivedFrom: decoder, enteringCodingKey: key, elements: [])
+		} else {																			// zero nodes found and no empty unkeyed container possible
+			throw DecodingError.keyNotFound(path: codingPath)
 		}
 	}
 	

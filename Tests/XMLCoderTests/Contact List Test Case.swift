@@ -56,7 +56,7 @@ final class ContactListTestCase : XCTestCase {
 	func testFlatString() throws {
 		var configuration = DecodingConfiguration()
 		configuration.unkeyedDecodingContainersUseContainerElements = false
-		XCTAssertEqual(try ElementDecoder(from: Self.flatXMLString.data(using: .utf8)!, configuration: configuration).decodeRootValue(), Self.list)
+		XCTAssertEqual(Self.list, try ElementDecoder(from: Self.flatXMLString.data(using: .utf8)!, configuration: configuration).decodeRootValue())
 	}
 	
 }

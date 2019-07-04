@@ -5,10 +5,10 @@ import DepthKit
 /// A decoder and decoding container that decodes a value from a sequence of zero or more elements.
 ///
 /// An element sequence decoder is derived from an element decoder
-/// - when more than one element matches a coding key during keyed decoding and `configuration.unkeyedDecodingContainersUseContainerElements` is `false`, or
+/// - when zero or more than one element matches a coding key during keyed decoding and `configuration.unkeyedDecodingContainersUseContainerElements` is `false`, or
 /// - when requesting an unkeyed decoder or nested unkeyed decoder (during keyed or single-value decoding).
 ///
-/// In the first case, `elements` contains at least two elements. In the second case, `elements` contains zero or more elements. In either case, keyed decoding and single primitive value decoding on an element sequence decoder are not valid operations and a `DecodingError.multipleNodesForKey(path:)` error is thrown if either is attempted.
+/// In the first case, `elements` contains zero or at least two elements. In the second case, `elements` contains zero or more elements. In either case, keyed decoding and single primitive value decoding on an element sequence decoder are not valid operations and a `DecodingError.keyNotFound(path:)` or `DecodingError.multipleNodesForKey(path:)` error is thrown if either is attempted.
 ///
 /// If `configuration.unkeyedDecodingContainersUseContainerElements` is `true` and more than one element matches a coding key during keyed decoding on an element decoder, a `DecodingError.multipleNodesForKey(path:)` error is thrown instead of an element sequence decoder being created.
 struct ElementSequenceDecoder : Decoder {
@@ -41,7 +41,7 @@ struct ElementSequenceDecoder : Decoder {
 	
 	// See protocol.
 	func container<Key : CodingKey>(keyedBy type: Key.Type) throws -> KeyedDecodingContainer<Key> {
-		throw DecodingError.multipleNodesForKey(path: codingPath)
+		throw (elements.isEmpty ? DecodingError.keyNotFound : DecodingError.multipleNodesForKey)(codingPath)
 	}
 	
 	// See protocol.
@@ -245,60 +245,65 @@ private struct SingleValueElementSequenceDecodingContainer : SingleValueDecoding
 		return false
 	}
 	
+	/// Throws an appropriate error indicating that the currently attempted operation is invalid in this context.
+	private func throwInvalidOperationError() throws -> Never {
+		throw (decoder.elements.isEmpty ? DecodingError.keyNotFound : DecodingError.multipleNodesForKey)(codingPath)
+	}
+	
 	func decode(_ type: Bool.Type) throws -> Bool {
-		throw DecodingError.multipleNodesForKey(path: codingPath)
+		try throwInvalidOperationError()
 	}
 	
 	func decode(_ type: String.Type) throws -> String {
-		throw DecodingError.multipleNodesForKey(path: codingPath)
+		try throwInvalidOperationError()
 	}
 	
 	func decode(_ type: Double.Type) throws -> Double {
-		throw DecodingError.multipleNodesForKey(path: codingPath)
+		try throwInvalidOperationError()
 	}
 	
 	func decode(_ type: Float.Type) throws -> Float {
-		throw DecodingError.multipleNodesForKey(path: codingPath)
+		try throwInvalidOperationError()
 	}
 	
 	func decode(_ type: Int.Type) throws -> Int {
-		throw DecodingError.multipleNodesForKey(path: codingPath)
+		try throwInvalidOperationError()
 	}
 	
 	func decode(_ type: Int8.Type) throws -> Int8 {
-		throw DecodingError.multipleNodesForKey(path: codingPath)
+		try throwInvalidOperationError()
 	}
 	
 	func decode(_ type: Int16.Type) throws -> Int16 {
-		throw DecodingError.multipleNodesForKey(path: codingPath)
+		try throwInvalidOperationError()
 	}
 	
 	func decode(_ type: Int32.Type) throws -> Int32 {
-		throw DecodingError.multipleNodesForKey(path: codingPath)
+		try throwInvalidOperationError()
 	}
 	
 	func decode(_ type: Int64.Type) throws -> Int64 {
-		throw DecodingError.multipleNodesForKey(path: codingPath)
+		try throwInvalidOperationError()
 	}
 	
 	func decode(_ type: UInt.Type) throws -> UInt {
-		throw DecodingError.multipleNodesForKey(path: codingPath)
+		try throwInvalidOperationError()
 	}
 	
 	func decode(_ type: UInt8.Type) throws -> UInt8 {
-		throw DecodingError.multipleNodesForKey(path: codingPath)
+		try throwInvalidOperationError()
 	}
 	
 	func decode(_ type: UInt16.Type) throws -> UInt16 {
-		throw DecodingError.multipleNodesForKey(path: codingPath)
+		try throwInvalidOperationError()
 	}
 	
 	func decode(_ type: UInt32.Type) throws -> UInt32 {
-		throw DecodingError.multipleNodesForKey(path: codingPath)
+		try throwInvalidOperationError()
 	}
 	
 	func decode(_ type: UInt64.Type) throws -> UInt64 {
-		throw DecodingError.multipleNodesForKey(path: codingPath)
+		try throwInvalidOperationError()
 	}
 	
 	func decode<T>(_ type: T.Type) throws -> T where T : Decodable {

@@ -49,6 +49,15 @@ final class TreeParser : NSObject, XMLParserDelegate {
 		openDepth -= 1
 	}
 	
+	func parser(_ parser: XMLParser, foundCharacters string: String) {
+		rootElement?.append(TextNode(stringValue: string), depth: openDepth)
+	}
+	
+	func parser(_ parser: XMLParser, foundCDATA data: Data) {
+		guard let string = String(data: data, encoding: .utf8) else { return }
+		rootElement?.append(TextNode(stringValue: string), depth: openDepth)
+	}
+	
 	// See protocol.
 	func parser(_ parser: XMLParser, didStartMappingPrefix prefix: String, toURI namespaceName: String) {
 		if prefix.isEmpty {
