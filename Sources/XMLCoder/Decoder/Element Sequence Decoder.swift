@@ -8,7 +8,7 @@ import DepthKit
 /// - when zero or more than one element matches a coding key during keyed decoding and `configuration.unkeyedDecodingContainersUseContainerElements` is `false`, or
 /// - when requesting an unkeyed decoder or nested unkeyed decoder (during keyed or single-value decoding).
 ///
-/// In the first case, `elements` contains zero or at least two elements. In the second case, `elements` contains zero or more elements. In either case, keyed decoding and single primitive value decoding on an element sequence decoder are not valid operations and a `DecodingError.keyNotFound(path:)` or `DecodingError.multipleNodesForKey(path:)` error is thrown if either is attempted.
+/// In the first case, `elements` contains zero or at least two elements. In the second case, `elements` contains any number of elements. In either case, keyed decoding and single primitive value decoding on an element sequence decoder are not valid operations and a `DecodingError.keyNotFound(path:)` or `DecodingError.multipleNodesForKey(path:)` error is thrown if either is attempted.
 ///
 /// If `configuration.unkeyedDecodingContainersUseContainerElements` is `true` and more than one element matches a coding key during keyed decoding on an element decoder, a `DecodingError.multipleNodesForKey(path:)` error is thrown instead of an element sequence decoder being created.
 struct ElementSequenceDecoder : Decoder {

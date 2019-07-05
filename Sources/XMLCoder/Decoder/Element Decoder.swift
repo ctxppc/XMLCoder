@@ -4,6 +4,8 @@ import DepthKit
 import Foundation
 
 /// A decoder and decoding container that decodes a value from an element.
+///
+/// An element decoder is used whenever decoding from a single element and derived whenever a single matching element is found during keyed decoding. When zero or more than one matching element is found, an element sequence decoder is derived instead.
 public struct ElementDecoder : Decoder {
 	
 	/// Creates a decoder to decode a value from the root element of given XML data.
@@ -60,19 +62,21 @@ public struct ElementDecoder : Decoder {
 	
 	/// Returns a keyed decoding container for decoding a value from `element`.
 	///
-	/// For every key during decoding with a keyed decoding container, the decoder looks for a matching attribute or matching elements within `element`. An error is thrown when decoding a primitive value for which there is more than one matching node (of the coding key's node kind).
+	/// For every key during decoding with a keyed decoding container, the decoder looks for a matching attribute or matching elements within `element`. An error is thrown when decoding a _primitive_ value for which there is more than one matching node (of the coding key's node kind).
 	public func container<Key : CodingKey>(keyedBy type: Key.Type) -> KeyedDecodingContainer<Key> {
 		.init(KeyedElementDecodingContainer(decoder: self))
 	}
 	
 	/// Returns an unkeyed decoder container for decoding values contained within `element`.
 	///
-	/// The decoder decodes values in an unkeyed decoding container by decoding every element contained within `element`. The attributes of `element` are ignored.
+	/// If `configuration.unkeyedDecodingContainersUseContainerElements` is `false`, the returned decoder decodes a single element, namely `element`. This case happens when `element` represents the only item of its collection and the collection isn't represented by a dedicated container element.
+	///
+	/// If `configuration.unkeyedDecodingContainersUseContainerElements` is `true`, the returned decoder decodes every element contained within `element`. The attributes of `element` are ignored. This case happens when `element` represents a container element.
 	public func unkeyedContainer() throws -> UnkeyedDecodingContainer {
 		try ElementSequenceDecoder(
 			derivedFrom:		self,
 			enteringCodingKey:	nil,
-			elements:			element.children.compactMap { $0 as? Element }
+			elements:			configuration.unkeyedDecodingContainersUseContainerElements ? element.children.compactMap { $0 as? Element } : [element]
 		).unkeyedContainer()
 	}
 	
