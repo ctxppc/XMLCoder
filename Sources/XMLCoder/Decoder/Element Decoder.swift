@@ -302,11 +302,7 @@ private struct SingleValueElementDecodingContainer : SingleValueDecodingContaine
 	}
 	
 	func decodeNil() -> Bool {
-		do {
-			return configuration.nilFormatter(try stringValue()) ?? false
-		} catch {
-			return false
-		}
+		configuration.elementRepresentsNil(decoder.element)
 	}
 	
 	func decode(_ type: Bool.Type) throws -> Bool {

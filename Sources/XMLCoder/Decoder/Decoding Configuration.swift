@@ -1,5 +1,6 @@
 // XMLCoder © 2019 Creatunit
 
+import DepthKit
 import Foundation
 
 /// A value that decodes an XML tree.
@@ -10,18 +11,55 @@ public struct DecodingConfiguration {
 	/// Creates a configuration.
 	public init() {}
 	
-	/// A function that determines whether a string value represents `nil`.
+	/// A function that determines whether a given element encodes `nil`.
 	///
-	/// The default value returns `true` if the string doesn't contain any characters beyond any whitespace, and `false` otherwise.
-	public var nilFormatter: Formatter<Bool> = { $0.trimmingCharacters(in: .whitespaces).isEmpty }
+	/// The default value returns `true` has a XML Schema Instances `nil` attribute with value `true`, and `false` otherwise.
+	public var elementRepresentsNil: (Element) -> Bool = { element in
+		
+		struct NillableValue : Decodable {
+			
+			init(from decoder: Decoder) throws {
+				isNil = try decoder.container(keyedBy: CodingKey.self).decodeIfPresent(key: .isNil) ?? false
+			}
+			
+			enum CodingKey : String, XMLCodingKey {
+				case isNil = "nil"
+				var namespace: Namespace? { DecodingConfiguration.xsiNamespace }
+				var nodeKind: CodingNodeKind { .attribute }
+			}
+			
+			let isNil: Bool
+			
+		}
+		
+		do {
+			return try ElementDecoder(element: element).singleValueContainer().decode(NillableValue.self).isNil
+		} catch {
+			return false
+		}
+		
+	}
+	
+	/// A function that determines whether a given attribute encodes `nil`.
+	///
+	/// The default value always returns `false`.
+	public var attributeRepresentsNil: (Attribute) -> Bool = { _ in false }
+	
+	/// The XML Schema Instances `nil` attribute type.
+	private static let xsiNilAttributeType = NodeType(namespace: xsiNamespace, localName: "nil")
+	
+	/// The XML Schema Instances namespace.
+	private static let xsiNamespace = Namespace(name: "http://www.w3.org/2001/XMLSchema-instance")
 	
 	/// A function that maps string values to Boolean values, returning `nil` for strings that do not represent valid Boolean values.
 	///
-	/// The default value maps "false" (case-insensitive) as well as empty or whitespace-only strings to `false`, and all other strings to `true`.
-	public var boolFormatter: Formatter<Bool> = { originalString in
-		let trimmedString = originalString.trimmingCharacters(in: .whitespaces)
-		let isFalse = trimmedString.lowercased() == "false" || trimmedString.isEmpty
-		return !isFalse
+	/// The default value maps "false" (case-insensitive) and 0 to `false`, and "true" (case-insensitive) and 1 to `true`.
+	public var boolFormatter: Formatter<Bool> = { string in
+		switch string {
+			case "0", "false":	return false
+			case "1", "true":	return true
+			default:			return nil
+		}
 	}
 	
 	/// A function that maps string values to numbers, returning `nil` for strings that do not represent valid numbers.

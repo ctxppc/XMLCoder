@@ -64,7 +64,7 @@ private struct SingleValueAttributeDecodingContainer : SingleValueDecodingContai
 	}
 	
 	func decodeNil() -> Bool {
-		configuration.nilFormatter(stringValue) ?? false
+		configuration.attributeRepresentsNil(decoder.attribute)
 	}
 	
 	func decode(_ type: Bool.Type) throws -> Bool {

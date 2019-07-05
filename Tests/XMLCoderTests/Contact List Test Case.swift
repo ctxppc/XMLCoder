@@ -31,32 +31,39 @@ final class ContactListTestCase : XCTestCase {
 	])
 	
 	static let flatXMLString = """
-	<?xml version="1.0" encoding="utf-8"?>
-	<c:contactList xmlns:c="\(ContactList.namespace)">
-		<c:person c:firstName="Jake" c:lastName="Andrews">
-			<c:gender>m</c:gender>
-			<c:mother c:firstName="Lisa" c:lastName="Anitsen" />
-			<c:father c:firstName="Rob" c:lastName="Andrews" />
-			<c:hobby>Hiking</c:hobby>
-			<c:hobby>Tennis</c:hobby>
-		</c:person>
-		<c:person c:firstName="Lotte" c:lastName="Bewyok">
-			<c:gender>f</c:gender>
-			<c:father c:firstName="Prem" c:lastName="Bewyok" />
-			<c:mother c:firstName="Pam" c:lastName="Bewyok" />
-			<c:hobby c:obsession="9001">Biking</c:hobby>
-		</c:person>
-		<c:person c:firstName="Jeff" c:lastName="Cook">
-			<c:gender>m</c:gender>
-			<c:mother c:firstName="Gwen" c:lastName="Cook" />
-		</c:person>
-	</c:contactList>
-	"""
+		<?xml version="1.0" encoding="utf-8"?>
+		<c:contactList xmlns:c="\(ContactList.namespace)">
+			<c:person c:firstName="Jake" c:lastName="Andrews">
+				<c:gender>m</c:gender>
+				<c:mother c:firstName="Lisa" c:lastName="Anitsen" />
+				<c:father c:firstName="Rob" c:lastName="Andrews" />
+				<c:hobby>Hiking</c:hobby>
+				<c:hobby>Tennis</c:hobby>
+			</c:person>
+			<c:person c:firstName="Lotte" c:lastName="Bewyok">
+				<c:gender>f</c:gender>
+				<c:father c:firstName="Prem" c:lastName="Bewyok" />
+				<c:mother c:firstName="Pam" c:lastName="Bewyok" />
+				<c:hobby c:obsession="9001">Biking</c:hobby>
+			</c:person>
+			<c:person c:firstName="Jeff" c:lastName="Cook">
+				<c:gender>m</c:gender>
+				<c:mother c:firstName="Gwen" c:lastName="Cook" />
+			</c:person>
+		</c:contactList>
+		"""
 	
 	func testFlatString() throws {
+		
 		var configuration = DecodingConfiguration()
 		configuration.unkeyedDecodingContainersUseContainerElements = false
-		XCTAssertEqual(Self.list, try ElementDecoder(from: Self.flatXMLString.data(using: .utf8)!, configuration: configuration).decodeRootValue())
+		let decoder = try ElementDecoder(from: Self.flatXMLString.data(using: .utf8)!, configuration: configuration)
+		
+		let expected = Self.list
+		let actual: ContactList = try decoder.decodeRootValue()
+		
+		XCTAssertEqual(expected, actual)
+		
 	}
 	
 }
