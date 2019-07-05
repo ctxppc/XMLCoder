@@ -56,7 +56,7 @@ public struct ElementDecoder : Decoder {
 	/// Decodes the root value.
 	///
 	/// - Returns: `singleValueContainer().decode(Value.self)`
-	public func decodeRootValue<Value : Decodable>() throws -> Value {
+	public func decodeRootValue<Value : Decodable>(ofType type: Value.Type = Value.self) throws -> Value {
 		try singleValueContainer().decode(Value.self)
 	}
 	
@@ -154,7 +154,7 @@ private struct KeyedElementDecodingContainer<Key : CodingKey> : KeyedDecodingCon
 		let matchedNodes = nodesByKeyString[key.stringValue] ?? []
 		if let matchedNode = matchedNodes.first {											// at least one node found, great!
 			if matchedNodes.count > 1 {														// at least two nodes found: return an element sequence decoder if acceptable
-				guard !decoder.configuration.unkeyedDecodingContainersUseContainerElements else { throw DecodingError.multipleNodesForKey(path: codingPath.appending(key)) }
+				guard !decoder.configuration.unkeyedDecodingContainersUseContainerElements else { throw DecodingError.multipleNodesForKey(path: codingPath) }
 				return ElementSequenceDecoder(derivedFrom: decoder, enteringCodingKey: key, elements: matchedNodes.compactMap { $0 as? Element })
 			} else {																		// exactly one node found: return appropriate decoder for node
 				switch matchedNode {
@@ -365,8 +365,16 @@ private struct SingleValueElementDecodingContainer : SingleValueDecodingContaine
 		try decode(using: configuration.numberFormatter).uint64Value
 	}
 	
+	private func decode(_ type: Date.Type) throws -> Date {
+		try decode(using: configuration.dateFormatter)
+	}
+	
 	func decode<T>(_ type: T.Type) throws -> T where T : Decodable {
-		try T(from: decoder)
+		if T.self == Date.self {
+			return try decode(Date.self) as! T
+		} else {
+			return try T(from: decoder)
+		}
 	}
 	
 }

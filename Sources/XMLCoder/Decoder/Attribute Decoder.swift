@@ -1,5 +1,7 @@
 // XMLCoder © 2019 Creatunit
 
+import Foundation
+
 /// A decoder and decoding container that decodes a value from an attribute.
 ///
 /// An attribute decoder only supports single-value decoding.
@@ -123,8 +125,16 @@ private struct SingleValueAttributeDecodingContainer : SingleValueDecodingContai
 		try decode(using: configuration.numberFormatter).uint64Value
 	}
 	
+	private func decode(_ type: Date.Type) throws -> Date {
+		try decode(using: configuration.dateFormatter)
+	}
+	
 	func decode<T>(_ type: T.Type) throws -> T where T : Decodable {
-		try T(from: decoder)
+		if T.self == Date.self {
+			return try decode(Date.self) as! T
+		} else {
+			return try T(from: decoder)
+		}
 	}
 	
 }

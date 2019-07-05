@@ -1,37 +1,37 @@
 // XMLCoder © 2019 Creatunit
 
 import XCTest
-@testable import XMLCoder
+import XMLCoder
 
 final class ContactListTestCase : XCTestCase {
 	
-	static let list = ContactList(people: [
-		Person(
+	let expected = ContactList(people: [
+		.init(
 			firstName:	"Jake",
 			lastName:	"Andrews",
 			gender:		.male,
-			mother:		Parent(firstName: "Lisa", lastName: "Anitsen"),
-			father:		Parent(firstName: "Rob", lastName: "Andrews"),
-			hobbies:	[Hobby(shortDescription: "Hiking"), Hobby(shortDescription: "Tennis")]
+			mother:		.init(firstName: "Lisa", lastName: "Anitsen"),
+			father:		.init(firstName: "Rob", lastName: "Andrews"),
+			hobbies:	[.init(shortDescription: "Hiking"), .init(shortDescription: "Tennis")]
 		),
-		Person(
+		.init(
 			firstName:	"Lotte",
 			lastName:	"Bewyok",
 			gender:		.female,
-			mother:		Parent(firstName: "Pam", lastName: "Bewyok"),
-			father:		Parent(firstName: "Prem", lastName: "Bewyok"),
-			hobbies:	[Hobby(shortDescription: "Biking", obsession: 9001)]
+			mother:		.init(firstName: "Pam", lastName: "Bewyok"),
+			father:		.init(firstName: "Prem", lastName: "Bewyok"),
+			hobbies:	[.init(shortDescription: "Biking", obsession: 9001)]
 		),
-		Person(
+		.init(
 			firstName:	"Jeff",
 			lastName:	"Cook",
 			gender:		.male,
-			mother:		Parent(firstName: "Gwen", lastName: "Cook")
+			mother:		.init(firstName: "Gwen", lastName: "Cook")
 		)
 	])
 	
-	static let flatXMLString = """
-		<?xml version="1.0" encoding="utf-8"?>
+	let xmlString = """
+		<?xml version="1.1" encoding="UTF-8"?>
 		<c:contactList xmlns:c="\(ContactList.namespace)">
 			<c:person c:firstName="Jake" c:lastName="Andrews">
 				<c:gender>m</c:gender>
@@ -53,14 +53,13 @@ final class ContactListTestCase : XCTestCase {
 		</c:contactList>
 		"""
 	
-	func testFlatString() throws {
+	func testDecoding() throws {
 		
 		var configuration = DecodingConfiguration()
 		configuration.unkeyedDecodingContainersUseContainerElements = false
-		let decoder = try ElementDecoder(from: Self.flatXMLString.data(using: .utf8)!, configuration: configuration)
+		let decoder = try ElementDecoder(from: xmlString.data(using: .utf8)!, configuration: configuration)
 		
-		let expected = Self.list
-		let actual: ContactList = try decoder.decodeRootValue()
+		let actual = try decoder.decodeRootValue(ofType: ContactList.self)
 		
 		XCTAssertEqual(expected, actual)
 		
